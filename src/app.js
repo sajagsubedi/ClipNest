@@ -14,6 +14,12 @@ app.use(express.urlencoded({extented:true,limit:"16kb"}))
 app.use(express.static("public"))
 app.use(cookieParser())
 
+//routes import 
+import userRoutes from "./routes/user.routes.js"
+
+//routes
+app.use("/api/v1/users",userRoutes)
+
 //utils and middlewares
 import errorHandler from "./utils/ErrorHandler.js"
 import notfound from "./middlewares/notfound.middleware.js"
