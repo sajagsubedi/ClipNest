@@ -3,6 +3,20 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+//--------------HELPERS---------------
+const generateTokens = async userId => {
+    try {
+        const user = await User.findById(userId);
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken };
+    } catch (err) {
+        throw new ApiError(500, "Something went wrong!");
+    }
+};
 //-----------CONTROLLERS--------------
 
 //CONTROLLER 1:Signup user by post in "api/v1/users/signup"
@@ -10,7 +24,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 const signupUser = async (req, res) => {
     const { username, email, fullName, password } = req.body;
     if (
-        [username, email, fullName, password].some(field => field?.trim() == "")
+        [username, email, fullName, password].some(field => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required");
     }
@@ -20,11 +34,10 @@ const signupUser = async (req, res) => {
     if (existedUser) {
         throw new ApiError(
             409,
-            "User with guve email and username already exists"
+            "User with given email and username already exists"
         );
     }
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-
+    const avatarLocalPath = req.files?.avatar[0].path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required!");
     }
@@ -64,8 +77,42 @@ const signupUser = async (req, res) => {
             new ApiResponse(201, createdUser, "User signed up successfully!")
         );
 };
-const getAllUsers = async (req, res) => {
-    let users = await User.find({});
-    return res.json({ users });
+
+//CONTROLLER 2:Signin user by post in "api/v1/users/signin"
+
+const signinUser = async (req, res) => {
+    const { username, email, password } = req.body;
+    if (!username || !email) {
+        throw new ApiError(400, "Username or Email is required!");
+    }
+    const existedUser = await User.findOne({
+        $or: [{ username }, { email }]
+    });
+
+    if (!existedUser) {
+        throw new ApiError(400, "Incorrect credendials!!");
+    }
+
+    const isCorrectPassword = await existedUser.isPasswordCorrect(password);
+
+    if (!isCorrectPassword) {
+        throw new ApiError(400, "Incorrect credendials!!");
+    }
+    const { accessToken, refreshToken } = await generateTokens(existedUser._id);
+
+    const user = await User.findById(existedUser._id).select(
+        "-password -refreshToken"
+    );
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(new ApiResponse(200, { accessToken, refreshToken, user }));
 };
-export { signupUser, getAllUsers };
+export { signupUser, signinUser };
