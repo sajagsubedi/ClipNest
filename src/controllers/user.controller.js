@@ -37,9 +37,10 @@ const signupUser = async (req, res) => {
             "User with given email and username already exists"
         );
     }
-    const avatarLocalPath = req.files?.avatar[0].path;
+    const avatarLocalPath = req.files?.avatar[0]?.path;
     if (!avatarLocalPath) {
-        throw new ApiError(400, "Avatar file is required!");
+      console.log("In block")
+        return new ApiError(400, "Avatar file is required!");
     }
 
     let coverImageLocalPath;
@@ -54,7 +55,7 @@ const signupUser = async (req, res) => {
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
     if (!avatar) {
-        throw new ApiError(400, "Avatar file is required!");
+        return new ApiError(400, "Avatar file is required!");
     }
     const user = await User.create({
         fullName,
