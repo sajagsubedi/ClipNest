@@ -24,7 +24,9 @@ const generateTokens = async userId => {
 const signupUser = async (req, res) => {
     const { username, email, fullName, password } = req.body;
     if (
-        [username, email, fullName, password].some(field => field?.trim() === "")
+        [username, email, fullName, password].some(
+            field => field == null || field.trim() === ""
+        )
     ) {
         throw new ApiError(400, "All fields are required");
     }
@@ -37,10 +39,9 @@ const signupUser = async (req, res) => {
             "User with given email and username already exists"
         );
     }
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    let avatarLocalPath = req.files?.avatar?.[0]?.path;
     if (!avatarLocalPath) {
-      console.log("In block")
-        return new ApiError(400, "Avatar file is required!");
+        throw new ApiError(400, "Avatar file is required!");
     }
 
     let coverImageLocalPath;
@@ -53,13 +54,17 @@ const signupUser = async (req, res) => {
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    let coverImage;
+    if (coverImageLocalPath) {
+        coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    }
     if (!avatar) {
-        return new ApiError(400, "Avatar file is required!");
+        throw new ApiError(400, "Avatar file is required!");
+        return;
     }
     const user = await User.create({
         fullName,
-        username: username.toLowerCase(),
+        username: username?.toLowerCase(),
         email,
         password,
         avatar: avatar.url,
@@ -82,20 +87,18 @@ const signupUser = async (req, res) => {
 //CONTROLLER 2:Signin user by post in "api/v1/users/signin"
 
 const signinUser = async (req, res) => {
-    const { username, email, password } = req.body;
-    if (!username || !email) {
+    const { emailusername, password } = req.body;
+    if (!emailusername) {
         throw new ApiError(400, "Username or Email is required!");
     }
     const existedUser = await User.findOne({
-        $or: [{ username }, { email }]
+        $or: [{ username: emailusername }, { email: emailusername }]
     });
-
     if (!existedUser) {
         throw new ApiError(400, "Incorrect credendials!!");
     }
 
     const isCorrectPassword = await existedUser.isPasswordCorrect(password);
-
     if (!isCorrectPassword) {
         throw new ApiError(400, "Incorrect credendials!!");
     }
