@@ -119,4 +119,28 @@ const signinUser = async (req, res) => {
         .cookie("refreshToken", refreshToken, options)
         .json(new ApiResponse(200, { accessToken, refreshToken, user }));
 };
-export { signupUser, signinUser };
+
+//CONTROLLER 3:Logout user by post in "api/v1/users/logout"
+const logoutUser = async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $unset: {
+                refreshToken: 1
+            }
+        },
+        {
+            new: true
+        }
+    );
+    const options={
+      httpOnly:true,
+      secure:true
+    }
+    return res
+    .status(200)
+    .clearCookie('accessToken',options)
+    .clearCookie('refreshToken',options)
+    .json(new ApiResponse(200,{},"User logged out "))
+};
+export { signupUser, signinUser ,logoutUser};
