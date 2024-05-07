@@ -190,4 +190,21 @@ const refreshAccessToken = async (req, res) => {
       throw new ApiError(401,err.message)
     }
 };
-export { signupUser, signinUser, logoutUser,refreshAccessToken };
+
+//CONTROLLER 5:Change password by post in "api/v1/users/changepassword"
+const changePassword=async(req,res)=>{
+  const {oldPassword,newPassword}=req.body
+  if(!oldPassword || !newPassword){
+    throw new ApiError(400,"All fielda are required!")
+  }
+  const existedUser=await User.findById(req.user?._id);
+  const isCorrectPassword=await existedUser.isPasswordCorrect(oldPassword)
+  if(!isCorrectPassword){
+    throw new ApiError(401, "Incorrect Password")
+  }
+  existedUser.password=newPassword
+  await existedUser.save({validateBeforeSave:false})
+  return res.status(200).json(new ApiResponse(200,{},"Password changed successfully!"))
+}
+
+export { signupUser, signinUser, logoutUser,refreshAccessToken,changePassword };
