@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 //--------------HELPERS---------------
 const generateTokens = async userId => {
     try {
@@ -160,51 +160,94 @@ const refreshAccessToken = async (req, res) => {
     if (!incomingRefreshToken) {
         throw new ApiError(401, "Unauthorized request");
     }
-    try{
-    const tokenInfo = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const existedUser = await User.findById(tokenInfo?._id);
+    try {
+        const tokenInfo = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        );
+        const existedUser = await User.findById(tokenInfo?._id);
 
-    if (!existedUser) {
-        throw new ApiError(401, "Invalid refresh token");
-    }
-    if (existedUser?.refreshToken !== incomingRefreshToken) {
-        throw new ApiError(401, "Refresh token expired or invalid!");
-    }
+        if (!existedUser) {
+            throw new ApiError(401, "Invalid refresh token");
+        }
+        if (existedUser?.refreshToken !== incomingRefreshToken) {
+            throw new ApiError(401, "Refresh token expired or invalid!");
+        }
 
-    const options = {
-        httpOnly: true,
-        secure: true
-    };
+        const options = {
+            httpOnly: true,
+            secure: true
+        };
 
-    const { accessToken, refreshToken } = await generateTokens(
-        existedUser?._id
-    );
+        const { accessToken, refreshToken } = await generateTokens(
+            existedUser?._id
+        );
 
-    return res
-        .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
-        .json(new ApiResponse(200, { accessToken, refreshToken },"Access token refreshed successfully"));
-    }catch(err){
-      console.log(err)
-      throw new ApiError(401,err.message)
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    { accessToken, refreshToken },
+                    "Access token refreshed successfully"
+                )
+            );
+    } catch (err) {
+        console.log(err);
+        throw new ApiError(401, err.message);
     }
 };
 
 //CONTROLLER 5:Change password by post in "api/v1/users/changepassword"
-const changePassword=async(req,res)=>{
-  const {oldPassword,newPassword}=req.body
-  if(!oldPassword || !newPassword){
-    throw new ApiError(400,"All fielda are required!")
-  }
-  const existedUser=await User.findById(req.user?._id);
-  const isCorrectPassword=await existedUser.isPasswordCorrect(oldPassword)
-  if(!isCorrectPassword){
-    throw new ApiError(401, "Incorrect Password")
-  }
-  existedUser.password=newPassword
-  await existedUser.save({validateBeforeSave:false})
-  return res.status(200).json(new ApiResponse(200,{},"Password changed successfully!"))
-}
+const changePassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, "All fielda are required!");
+    }
+    const existedUser = await User.findById(req.user?._id);
+    const isCorrectPassword = await existedUser.isPasswordCorrect(oldPassword);
+    if (!isCorrectPassword) {
+        throw new ApiError(401, "Incorrect Password");
+    }
+    existedUser.password = newPassword;
+    await existedUser.save({ validateBeforeSave: false });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Password changed successfully!"));
+};
 
-export { signupUser, signinUser, logoutUser,refreshAccessToken,changePassword };
+//CONTROLLER 6:Update user details by patch in "api/v1/users/updateaccount"
+const updateAccount = async (req, res) => {
+    const { fullName, username } = req.body;
+    if (!fullName && !username) {
+        throw new ApiError(400, "At least one field is required!");
+    }
+    const updateObj = {};
+    if (fullName) {
+        updateObj.fullName = fullName;
+    }
+
+    if (username) {
+        updateObj.username = username;
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: updateObj
+        },
+        { new: true }
+    ).select("-password");
+   return res
+   .status(200)
+   .json(new ApiResponse(200, user, "Updated account details successfully!"));
+};
+export {
+    signupUser,
+    signinUser,
+    logoutUser,
+    refreshAccessToken,
+    changePassword,
+    updateAccount
+};
