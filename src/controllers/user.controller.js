@@ -243,11 +243,19 @@ const updateAccount = async (req, res) => {
    .status(200)
    .json(new ApiResponse(200, user, "Updated account details successfully!"));
 };
+
+//CONTROLLER 7:Get current user details by get in "api/v1/users/myprofile"
+const getMyProfile=async(req,res)=>{
+  return res
+  .status(200)
+  .json(new ApiResponse(200,req.user,"Your profile fetched successfully"))
+}
 export {
     signupUser,
     signinUser,
     logoutUser,
     refreshAccessToken,
     changePassword,
-    updateAccount
+    updateAccount,
+    getMyProfile
 };

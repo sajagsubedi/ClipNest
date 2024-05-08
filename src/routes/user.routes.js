@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import {signupUser,signinUser,logoutUser,refreshAccessToken,changePassword,updateAccount} from "../controllers/user.controller.js"
+import {signupUser,signinUser,logoutUser,refreshAccessToken,changePassword,updateAccount,getMyProfile} from "../controllers/user.controller.js"
 import {checkAuth} from "../middlewares/auth.middleware.js"
 const router = Router();
 
@@ -22,4 +22,5 @@ router.route("/logout").post(checkAuth,logoutUser);
 router.route("/refreshtoken").post(refreshAccessToken);
 router.route("/changepassword").post(checkAuth,changePassword);
 router.route("/updateaccount").patch(checkAuth,updateAccount);
+router.route("/myprofile").get(checkAuth,getMyProfile);
 export default router;
