@@ -67,8 +67,8 @@ const signupUser = async (req, res) => {
         username: username?.toLowerCase(),
         email,
         password,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || ""
+        avatar: avatar.secure_url,
+        coverImage: coverImage?.secure_url || ""
     });
 
     const createdUser = await User.findById(user._id).select(
@@ -239,17 +239,38 @@ const updateAccount = async (req, res) => {
         },
         { new: true }
     ).select("-password");
-   return res
-   .status(200)
-   .json(new ApiResponse(200, user, "Updated account details successfully!"));
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "Updated account details successfully!")
+        );
 };
 
 //CONTROLLER 7:Get current user details by get in "api/v1/users/myprofile"
-const getMyProfile=async(req,res)=>{
-  return res
-  .status(200)
-  .json(new ApiResponse(200,req.user,"Your profile fetched successfully"))
-}
+const getMyProfile = async (req, res) => {
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, req.user, "Your profile fetched successfully")
+        );
+};
+
+//CONTROLLER 8:Update avatar by patch in "api/v1/users/avatar"
+const updateAvatar = async (req, res) => {
+    const avatarLocalPath = req.file.path
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is required!");
+    }
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    if (!avatar) {
+        throw new ApiError(400, "Avatar file is required!");
+        return;
+    }
+    const updatedUser = await User.findByIdAndUpdate(req.user?._id, {
+        $set: { avatar:avatar.secure_url }
+    },{new:true}).select("-password");
+    return res.status(200).json(new ApiResponse(200,updatedUser,"Avatar updated successfully!"))
+};
 export {
     signupUser,
     signinUser,
@@ -257,5 +278,6 @@ export {
     refreshAccessToken,
     changePassword,
     updateAccount,
-    getMyProfile
+    getMyProfile,
+    updateAvatar
 };
