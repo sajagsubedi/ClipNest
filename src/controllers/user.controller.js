@@ -1,7 +1,10 @@
 import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+    uploadOnCloudinary,
+    deleteFromCloudinary
+} from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 //--------------HELPERS---------------
 const generateTokens = async userId => {
@@ -67,8 +70,14 @@ const signupUser = async (req, res) => {
         username: username?.toLowerCase(),
         email,
         password,
-        avatar: avatar.secure_url,
-        coverImage: coverImage?.secure_url || ""
+        avatar: {
+            url: avatar.secure_url,
+            public_id: avatar.public_id
+        },
+        coverImage: {
+            url: coverImage?.secure_url || "",
+            public_id: coverImage?.public_id || ""
+        }
     });
 
     const createdUser = await User.findById(user._id).select(
@@ -257,19 +266,36 @@ const getMyProfile = async (req, res) => {
 
 //CONTROLLER 8:Update avatar by patch in "api/v1/users/avatar"
 const updateAvatar = async (req, res) => {
-    const avatarLocalPath = req.file.path
+    const avatarLocalPath = req.file.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required!");
     }
+    const existedUser = await User.findById(req.user?._id).select("avatar");
+
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     if (!avatar) {
         throw new ApiError(400, "Avatar file is required!");
         return;
     }
-    const updatedUser = await User.findByIdAndUpdate(req.user?._id, {
-        $set: { avatar:avatar.secure_url }
-    },{new:true}).select("-password");
-    return res.status(200).json(new ApiResponse(200,updatedUser,"Avatar updated successfully!"))
+    const publicId=existedUser?.avatar?.public_id
+    await deleteFromCloudinary(publicId);
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                avatar: {
+                    url: avatar.secure_url,
+                    public_id: avatar.public_id
+                }
+            }
+        },
+        { new: true }
+    ).select("-password");
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedUser, "Avatar updated successfully!")
+        );
 };
 export {
     signupUser,
