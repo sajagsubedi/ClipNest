@@ -266,7 +266,7 @@ const getMyProfile = async (req, res) => {
 
 //CONTROLLER 8:Update avatar by patch in "api/v1/users/avatar"
 const updateAvatar = async (req, res) => {
-    const avatarLocalPath = req.file.path;
+    const avatarLocalPath = req.file?.path;
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required!");
     }
@@ -277,7 +277,7 @@ const updateAvatar = async (req, res) => {
         throw new ApiError(400, "Avatar file is required!");
         return;
     }
-    const publicId=existedUser?.avatar?.public_id
+    const publicId = existedUser?.avatar?.public_id;
     await deleteFromCloudinary(publicId);
     const updatedUser = await User.findByIdAndUpdate(
         req.user?._id,
@@ -297,6 +297,47 @@ const updateAvatar = async (req, res) => {
             new ApiResponse(200, updatedUser, "Avatar updated successfully!")
         );
 };
+
+//CONTROLLER 9:Update cover image by patch in "api/v1/users/coverimage"
+const updateCoverImage = async (req, res) => {
+    const coverImageLocalPath = req.file?.path;
+    if (!coverImageLocalPath) {
+        throw new ApiError(400, "Cover Image is required!");
+    }
+    const existedUser = await User.findById(req.user?._id).select("coverImage");
+    const publicId = existedUser?.coverImage?.public_id;
+
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    if (!coverImage) {
+        throw new ApiError(400, "Cover Image  is required!");
+        return;
+    }
+    if (publicId) {
+        await deleteFromCloudinary(publicId);
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                coverImage: {
+                    url: coverImage.secure_url,
+                    public_id: coverImage.public_id
+                }
+            }
+        },
+        { new: true }
+    ).select("-password");
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                updatedUser,
+                "Cover Image updated successfully!"
+            )
+        );
+};
+
 export {
     signupUser,
     signinUser,
@@ -306,4 +347,5 @@ export {
     updateAccount,
     getMyProfile,
     updateAvatar
+    ,updateCoverImage
 };
