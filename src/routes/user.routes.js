@@ -9,7 +9,8 @@ import {
     updateAccount,
     getMyProfile,
     updateAvatar,
-    updateCoverImage
+    updateCoverImage,
+    getChannel
 } from "../controllers/user.controller.js";
 import { checkAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
@@ -35,6 +36,9 @@ router.route("/changepassword").post(checkAuth, changePassword);
 router.route("/updateaccount").patch(checkAuth, updateAccount);
 router.route("/myprofile").get(checkAuth, getMyProfile);
 router.route("/avatar").patch(checkAuth, upload.single("avatar"), updateAvatar);
-router.route("/coverimage").patch(checkAuth, upload.single("coverImage"), updateCoverImage);
+router
+    .route("/coverimage")
+    .patch(checkAuth, upload.single("coverImage"), updateCoverImage);
+router.route("/channel/:username").get(checkAuth, getChannel);
 
 export default router;

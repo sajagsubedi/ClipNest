@@ -338,6 +338,75 @@ const updateCoverImage = async (req, res) => {
         );
 };
 
+//CONTROLLER 10:Get channel by get in "api/v1/users/channel/:username"
+const getChannel = async (req, res) => {
+    const { username } = req.params;
+    if (!username.trim()) {
+        throw new ApiError(400, "Username is required!");
+    }
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username?.trim().toLowerCase()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                subsribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {
+                            $in: [req.user?._id, "$subscribers.subscriber"]
+                        },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                email: 1,
+                subsribedToCount: 1,
+                subscribersCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1
+            }
+        }
+    ]);
+    if (!channel.length) {
+        throw new ApiError(400, "Channel doesn't exists");
+    }
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel, "User channel fetched successfully!")
+        );
+};
 export {
     signupUser,
     signinUser,
@@ -346,6 +415,7 @@ export {
     changePassword,
     updateAccount,
     getMyProfile,
-    updateAvatar
-    ,updateCoverImage
+    updateAvatar,
+    updateCoverImage,
+    getChannel
 };
