@@ -10,7 +10,8 @@ import {
     getMyProfile,
     updateAvatar,
     updateCoverImage,
-    getChannel
+    getChannel,
+    getWatchHistory
 } from "../controllers/user.controller.js";
 import { checkAuth } from "../middlewares/auth.middleware.js";
 const router = Router();
@@ -40,5 +41,6 @@ router
     .route("/coverimage")
     .patch(checkAuth, upload.single("coverImage"), updateCoverImage);
 router.route("/channel/:username").get(checkAuth, getChannel);
+router.route("/history").get(checkAuth, getWatchHistory);
 
 export default router;
