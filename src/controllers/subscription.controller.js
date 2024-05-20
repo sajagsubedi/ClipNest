@@ -12,7 +12,23 @@ const getMySubscribtions = async (req, res) => {
             $match: {
                 subscriber: new mongoose.Types.ObjectId(req.user?._id)
             }
-        }
+        },
+        {
+          $lookup:{
+            from:"users",
+            localField:"channel",
+            foreignField:"_id",
+            as:"channelInformation",
+            pipeline:[{
+              $project:{
+                fullName:1,
+                avatar:{
+                  url:1
+                }
+              }
+            }]
+          }
+        },
     ]);
 
     res.status(200).json(
