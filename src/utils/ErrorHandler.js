@@ -2,7 +2,6 @@ import {ApiError} from "./ApiError.js"
 
 //errorHandler 
 const errorHandler = (err, req, res, next) => {
-  console.log(err)
   //checking whether the error is custom error or not
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
