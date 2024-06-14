@@ -16,11 +16,13 @@ app.use(cookieParser())
 
 //routes import 
 import userRoutes from "./routes/user.routes.js"
-import subscriptionRoutes from "./routes/subscription.route.js"
+import subscriptionRoutes from "./routes/subscription.routes.js"
+import videoRoutes from "./routes/video.routes.js"
 
 //routes
 app.use("/api/v1/users",userRoutes)
 app.use("/api/v1/subscription",subscriptionRoutes)
+app.use("/api/v1/videos",videoRoutes)
 
 //utils and middlewares
 import errorHandler from "./utils/ErrorHandler.js"
