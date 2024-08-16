@@ -20,6 +20,7 @@ const generateTokens = async userId => {
 
         return { accessToken, refreshToken };
     } catch (err) {
+      console.log(err)
         throw new ApiError(500, "Something went wrong!");
     }
 };
