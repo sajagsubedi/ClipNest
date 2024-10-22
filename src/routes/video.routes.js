@@ -10,6 +10,7 @@ import {
   postVideo,
   getVideo,
   updateVideo,
+  deleteVideo,
 } from "../controllers/video.controller.js";
 
 router.route("/post").post(
@@ -29,6 +30,7 @@ router.route("/post").post(
 router
   .route("/v/:videoId")
   .get(checkOptionalAuth, getVideo)
-  .patch(checkAuth, verifyVideoOwner, updateVideo);
+  .patch(checkAuth, verifyVideoOwner, updateVideo)
+  .delete(checkAuth, verifyVideoOwner, deleteVideo);
 
 export default router;

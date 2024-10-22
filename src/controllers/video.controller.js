@@ -2,8 +2,10 @@ import Video from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { checkAuth } from "../middlewares/auth.middleware.js";
+import {
+  deleteFromCloudinary,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 
 //-----------CONTROLLERS--------------
 
@@ -57,34 +59,37 @@ const postVideo = async (req, res) => {
 
 const getVideo = async (req, res, next) => {
   const { videoId } = req.params;
+
+  // Check if the video ID is valid
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(404, "Video not found!");
   }
-  const video = await Video.findByIdAndUpdate(
-    videoId,
-    {
-      $sum: {
-        views: 1,
-      },
-    },
-    { new: true }
-  );
 
-  if (!video.isPublished) {
-    if (!req.user) {
-      throw new ApiError(404, "Video not found");
-    }
-    if (req.user._id != video.owner.toString()) {
-      throw new ApiError(404, "Video not found");
-    }
-  }
+  // Fetch the video without updating views yet
+  const video = await Video.findById(videoId);
+
+  // Check if video exists
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
 
+  // Check if the video is unpublished and restrict access
+  if (!video.isPublished) {
+    if (!req.user || req.user._id != video.owner.toString()) {
+      throw new ApiError(404, "Video not found");
+    }
+  }
+
+  // Now that user is authorized, increment the views
+  await Video.findByIdAndUpdate(
+    videoId,
+    { $inc: { views: 1 } }, // Use $inc instead of $sum
+    { new: true }
+  );
+
   return res
     .status(200)
-    .json(new ApiResponse(201, video, "Video fetched successfully!"));
+    .json(new ApiResponse(200, video, "Video fetched successfully!"));
 };
 
 //CONTROLLER 3:Update video by patch in "api/v1/videos/v/:videoId"
@@ -115,5 +120,25 @@ const updateVideo = async (req, res) => {
     .json(new ApiResponse(201, updatedVideo, "Video updated successfully!"));
 };
 
+//CONTROLLER 4:Delete video by delete in "api/v1/videos/v/:videoId"
+const deleteVideo = async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    return res.status(400).send({ error: "Invalid videoId" });
+  }
+
+  const deletedVideo = await Video.findByIdAndDelete(videoId);
+  if (!deletedVideo) {
+    throw new ApiError(404, "Video not found");
+  }
+  await deleteFromCloudinary(deletedVideo.videoUrl.public_id);
+  await deleteFromCloudinary(deletedVideo.thumbnail.public_id);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(201, deletedVideo, "Video deleted successfully!"));
+};
+
 //exports
-export { postVideo, getVideo, updateVideo };
+export { postVideo, getVideo, updateVideo, deleteVideo };
