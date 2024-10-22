@@ -1,6 +1,5 @@
 import {v2 as cloudinary} from "cloudinary"
 import fs from "fs"
-import { ApiError } from "../utils/ApiError.js";
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {

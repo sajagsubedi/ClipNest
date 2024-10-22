@@ -1,24 +1,34 @@
 import { Router } from "express";
-import { checkAuth } from "../middlewares/auth.middleware.js";
+import {
+  checkAuth,
+  checkOptionalAuth,
+} from "../middlewares/auth.middleware.js";
 import { verifyVideoOwner } from "../middlewares/videos.middleware.js";
 const router = Router();
 import { upload } from "../middlewares/multer.middleware.js";
-import {postVideo,updateVideo} from "../controllers/video.controller.js"
+import {
+  postVideo,
+  getVideo,
+  updateVideo,
+} from "../controllers/video.controller.js";
 
-router.route("/post").post(checkAuth,
-    upload.fields([
-        {
-            name: "video",
-            maxCount: 1
-        },
-        {
-            name: "thumbnail",
-            maxCount: 1
-        }
-    ]),
-    postVideo
+router.route("/post").post(
+  checkAuth,
+  upload.fields([
+    {
+      name: "video",
+      maxCount: 1,
+    },
+    {
+      name: "thumbnail",
+      maxCount: 1,
+    },
+  ]),
+  postVideo
 );
-router.route("/v/:videoId")
-.patch(checkAuth,verifyVideoOwner,updateVideo)
+router
+  .route("/v/:videoId")
+  .get(checkOptionalAuth, getVideo)
+  .patch(checkAuth, verifyVideoOwner, updateVideo);
 
 export default router;
