@@ -1,4 +1,5 @@
 import Video from "../models/video.model.js";
+import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
@@ -140,5 +141,104 @@ const deleteVideo = async (req, res) => {
     .json(new ApiResponse(201, deletedVideo, "Video deleted successfully!"));
 };
 
+//CONTROLLER 5:get all videos by get in "api/v1/videos/getallvideos?sortBy=(date,viewCount)&uploadDate=(in seconds)&duration=(in seconds)&searchQuery=value"
+const getAllVideos = async (req, res) => {
+  const { sortBy, uploadDate, duration, searchQuery, username } = req.query;
+
+  const pipelines = [];
+
+  if (searchQuery) {
+    pipelines.push({
+      $search: {
+        index: "search-videos",
+        text: {
+          query: searchQuery,
+          path: ["title", "description"],
+        },
+      },
+    });
+  }
+
+  if (sortBy) {
+    if (sortBy == "date") {
+      pipelines.push({
+        $sort: {
+          createdAt: -1,
+        },
+      });
+    }
+
+    if (sortBy == "viewCount") {
+      pipelines.push({
+        $sort: {
+          views: -1,
+        },
+      });
+    }
+  }
+
+  if (uploadDate) {
+    const pastTimeStamp = new Date().getTime() - uploadDate * 1000;
+    const boundaryDate = new Date(pastTimeStamp);
+
+    pipelines.push({
+      $match: {
+        createdAt: { $gt: boundaryDate },
+      },
+    });
+  }
+
+  if (duration) {
+    if (duration == "under_4") {
+      pipelines.push({
+        $match: {
+          duration: { $lt: 240 },
+        },
+      });
+    }
+    if (duration == "4_20") {
+      pipelines.push({
+        $match: {
+          duration: { $gt: 240, $lt: 1200 },
+        },
+      });
+    }
+
+    if (duration == "over_20") {
+      pipelines.push({
+        $match: {
+          duration: { $gt: 1200 },
+        },
+      });
+    }
+  }
+  if (username) {
+    const foundUser = await User.findOne({ username });
+
+    if (!foundUser) {
+      throw new ApiError(404, "Video not found");
+    }
+
+    pipelines.push({
+      $match: {
+        owner: foundUser._id,
+      },
+    });
+    if (foundUser._id.toString() != req?.user?._id.toString()) {
+      pipelines.push({
+        $match: {
+          isPublished: true,
+        },
+      });
+    }
+  }
+
+  const videos = await Video.aggregate(pipelines);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(201, videos, "Video Fetched successfully!"));
+};
+
 //exports
-export { postVideo, getVideo, updateVideo, deleteVideo };
+export { postVideo, getVideo, updateVideo, deleteVideo, getAllVideos };

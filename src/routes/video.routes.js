@@ -11,6 +11,7 @@ import {
   getVideo,
   updateVideo,
   deleteVideo,
+  getAllVideos,
 } from "../controllers/video.controller.js";
 
 router.route("/post").post(
@@ -32,5 +33,7 @@ router
   .get(checkOptionalAuth, getVideo)
   .patch(checkAuth, verifyVideoOwner, updateVideo)
   .delete(checkAuth, verifyVideoOwner, deleteVideo);
+
+router.route("/getallvideos").get( checkOptionalAuth,getAllVideos);
 
 export default router;
