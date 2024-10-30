@@ -141,9 +141,17 @@ const deleteVideo = async (req, res) => {
     .json(new ApiResponse(201, deletedVideo, "Video deleted successfully!"));
 };
 
-//CONTROLLER 5:get all videos by get in "api/v1/videos/getallvideos?sortBy=(date,viewCount)&uploadDate=(in seconds)&duration=(in seconds)&searchQuery=value"
+//CONTROLLER 5:get all videos by get in "api/v1/videos/getallvideos?sortBy=(date,viewCount)&uploadDate=(in seconds)&duration=(in seconds)&searchQuery=value&page=1,pageSize=2"
 const getAllVideos = async (req, res) => {
-  const { sortBy, uploadDate, duration, searchQuery, username } = req.query;
+  const {
+    sortBy,
+    uploadDate,
+    duration,
+    searchQuery,
+    username,
+    page = 1,
+    pageSize = 10,
+  } = req.query;
 
   const pipelines = [];
 
@@ -233,7 +241,14 @@ const getAllVideos = async (req, res) => {
     }
   }
 
-  const videos = await Video.aggregate(pipelines);
+  const videoAggregate = Video.aggregate(pipelines);
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(pageSize, 10),
+  };
+
+  const videos = await Video.aggregatePaginate(videoAggregate, options);
 
   return res
     .status(200)
