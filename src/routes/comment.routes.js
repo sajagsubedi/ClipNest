@@ -20,6 +20,6 @@ router
 router
   .route("/c/:commentId")
   .delete(checkAuth, deleteComment)
-  .update(checkAuth, updateComment);
+  .patch(checkAuth, updateComment);
 
 export default router;
