@@ -9,6 +9,7 @@ import {
   addComment,
   getVideoComments,
   deleteComment,
+  updateComment,
 } from "../controllers/comment.controller.js";
 
 router
@@ -16,6 +17,9 @@ router
   .post(checkAuth, addComment)
   .get(checkOptionalAuth, getVideoComments);
 
-router.route("/c/:commentId").delete(checkAuth, deleteComment);
+router
+  .route("/c/:commentId")
+  .delete(checkAuth, deleteComment)
+  .update(checkAuth, updateComment);
 
 export default router;

@@ -151,3 +151,37 @@ export const deleteComment = async (req, res) => {
       new ApiResponse(201, deletedComment, "Comment deleted successfully!")
     );
 };
+
+// CONTROLLER 4:Update comment  by patch in "api/v1/comments/c/:commentId"
+export const updateComment = async (req, res) => {
+  const { commentId } = req.params;
+
+  const { content } = req.body;
+
+  if (!content) {
+    throw new ApiError(400, "Content is required !");
+  }
+
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  const updatedComment = await Comment.findOneAndUpdate(
+    {
+      _id: commentId,
+      owner: req?.user?._id,
+    },
+    { content },
+    { new: true }
+  );
+
+  if (!updatedComment) {
+    throw new ApiError(400, "Comment doesn't exists or unauthorized request !");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(201, updatedComment, "Comment updated successfully!")
+    );
+};
