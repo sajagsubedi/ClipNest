@@ -42,7 +42,7 @@ export const getVideoComments = async (req, res) => {
     throw new ApiError(400, "Video not found");
   }
 
-  const video = await Video.findById(new mongoose.Types.ObjectId(videoId));
+  const video = await Video.findById(videoId);
 
   if (!video) {
     throw new ApiError(400, "Video not found");
@@ -85,6 +85,13 @@ export const getVideoComments = async (req, res) => {
             else: false,
           },
         },
+        isOwner: {
+          $cond: {
+            if: { $eq: [req?.user?._id || "", "$owner._id"] },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     {
@@ -104,22 +111,43 @@ export const getVideoComments = async (req, res) => {
           },
         },
         isLiked: 1,
+        isOwner: 1,
       },
     },
   ]);
 
   const options = {
     page: parseInt(page, 10),
-    limit: parseInt(pageSize, 10)
+    limit: parseInt(pageSize, 10),
+  };
+
+  const comments = await Comment.aggregatePaginate(commentsAggregate, options);
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, comments, "Comments fetched successfully!"));
 };
 
-const comments = await Comment.aggregatePaginate(
-    commentsAggregate,
-    options
-);
+// CONTROLLER 3:Delete comment  by delete in "api/v1/comments/c/:commentId"
+export const deleteComment = async (req, res) => {
+  const { commentId } = req.params;
 
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Video not found");
+  }
 
-return res
-.status(201)
-.json(new ApiResponse(201, comments, "Comments fetched successfully!"));
+  const deletedComment = await Comment.deleteOne({
+    _id: commentId,
+    owner: req?.user?._id,
+  });
+
+  if (!deletedComment) {
+    throw new ApiError(400, "Comment doesn't exists or unauthorized request !");
+  }
+
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, deletedComment, "Comment deleted successfully!")
+    );
 };
