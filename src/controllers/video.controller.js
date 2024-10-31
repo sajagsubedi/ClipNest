@@ -67,7 +67,93 @@ const getVideo = async (req, res, next) => {
   }
 
   // Fetch the video without updating views yet
-  const video = await Video.findById(videoId);
+  const video = await Video.aggregate([
+    {
+      $match: {
+        _id: mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "video",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "ownerDetails._id",
+        foreignField: "channel",
+        as: "subscriptions",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+        isLiked: {
+          $cond: {
+            if: { $in: [req?.user?._id || "", "$likes.likedBy"] },
+            then: true,
+            else: false,
+          },
+        },
+        ownerDetails: {
+          $first: "$ownerDetails",
+        },
+      },
+    },
+    {
+      $addFields: {
+        "ownerDetails.isSubscribed": {
+          $cond: {
+            if: {
+              $in: [req?.user?._id || "", "$subscriptions.subscriber"],
+            },
+            then: true,
+            else: false,
+          },
+        },
+        "ownerDetails.subscriberCount": {
+          $size: "$subscriptions",
+        },
+      },
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        ownerDetails: {
+          fullName: 1,
+          username: 1,
+          avatar: {
+            url: 1,
+          },
+          isSubscribed: 1,
+          subscriberCount: 1,
+        },
+        createdAt: 1,
+        views: 1,
+        duration: 1,
+        thumbnail: {
+          url: 1,
+        },
+        likeCount: 1,
+        isLiked: 1,
+      },
+    },
+  ]);
 
   // Check if video exists
   if (!video) {
@@ -240,7 +326,38 @@ const getAllVideos = async (req, res) => {
       });
     }
   }
-
+  pipelines.push([
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+      },
+    },
+    {
+      $unwind: "$ownerDetails",
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        ownerDetails: {
+          fullName: 1,
+          username: 1,
+          avatar: {
+            url: 1,
+          },
+        },
+        createdAt: 1,
+        views: 1,
+        duration: 1,
+        thumbnail: {
+          url: 1,
+        },
+      },
+    },
+  ]);
   const videoAggregate = Video.aggregate(pipelines);
 
   const options = {
