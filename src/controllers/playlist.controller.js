@@ -28,12 +28,36 @@ export const addPlaylist = async (req, res) => {
     .json(new ApiResponse(201, newPlaylist, "Playlist created successfully!"));
 };
 
-//CONTROLLER 2:Get my playlists by post in "api/v1/playlists/me"
+//CONTROLLER 2:Get my playlists by get in "api/v1/playlists/me"
 export const getMyPlaylists = async (req, res) => {
   const myPlaylists = await Playlist.aggregate([
     {
       $match: {
-        owner:new mongoose.Types.ObjectId(req?.user?.id),
+        owner: new mongoose.Types.ObjectId(req?.user?.id),
+      },
+    },
+    {
+      $addFields: {
+        videosCount: {
+          $size: "$videos",
+        },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, myPlaylists, "Playlist fetched successfully!"));
+};
+
+//CONTROLLER 3:Get users playlists by post in "api/v1/playlists/user/:userId"
+export const getUserPlaylists = async (req, res) => {
+  const { userId } = req.params;
+
+  const myPlaylists = await Playlist.aggregate([
+    {
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
       },
     },
     {
