@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Playlist from "../models/playlist.model.js";
+import Video from "../models/video.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -50,7 +51,7 @@ export const getMyPlaylists = async (req, res) => {
     .json(new ApiResponse(200, myPlaylists, "Playlist fetched successfully!"));
 };
 
-//CONTROLLER 3:Get users playlists by post in "api/v1/playlists/user/:userId"
+//CONTROLLER 3:Get users playlists by get in "api/v1/playlists/user/:userId"
 export const getUserPlaylists = async (req, res) => {
   const { userId } = req.params;
 
@@ -72,4 +73,50 @@ export const getUserPlaylists = async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, myPlaylists, "Playlist fetched successfully!"));
+};
+
+export const addVideo = async (req, res) => {
+  const { playlistId } = req.params;
+  const { video } = req.body;
+
+  // Validate video and playlist IDs
+  if (!video) throw new ApiError(400, "Video is required!");
+  if (
+    !mongoose.Types.ObjectId.isValid(video) ||
+    !mongoose.Types.ObjectId.isValid(playlistId)
+  ) {
+    throw new ApiError(404, "Invalid video or playlist ID!");
+  }
+
+  // Check if video and playlist exist
+  const [existingVideo, existingPlaylist] = await Promise.all([
+    Video.findById(video),
+    Playlist.findById(playlistId),
+  ]);
+
+  if (!existingVideo || !existingPlaylist) {
+    throw new ApiError(404, "Video or playlist not found!");
+  }
+
+  // Verify authorization and if video is already in playlist
+  if (req.user._id.toString() !== existingPlaylist.owner.toString()) {
+    throw new ApiError(403, "Unauthorized request!");
+  }
+  if (existingPlaylist.videos.includes(video)) {
+    throw new ApiError(400, "Video already exists in playlist!");
+  }
+
+  // Add video to playlist
+  existingPlaylist.videos.push(video);
+  await existingPlaylist.save();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        existingPlaylist,
+        "Video added to playlist successfully!"
+      )
+    );
 };
