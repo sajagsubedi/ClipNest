@@ -70,7 +70,7 @@ const getVideo = async (req, res, next) => {
   const video = await Video.aggregate([
     {
       $match: {
-        _id: mongoose.Types.ObjectId(videoId),
+        _id: new mongoose.Types.ObjectId(videoId),
       },
     },
     {
@@ -151,18 +151,20 @@ const getVideo = async (req, res, next) => {
         },
         likeCount: 1,
         isLiked: 1,
+        owner: 1,
+        isPublished: 1,
       },
     },
   ]);
 
   // Check if video exists
-  if (!video) {
+  if (video.length == 0) {
     throw new ApiError(404, "Video not found");
   }
-
+  
   // Check if the video is unpublished and restrict access
-  if (!video.isPublished) {
-    if (!req.user || req.user._id != video.owner.toString()) {
+  if (!video[0].isPublished) {
+    if (!req.user || req.user._id != video[0].owner.toString()) {
       throw new ApiError(404, "Video not found");
     }
   }
@@ -176,7 +178,7 @@ const getVideo = async (req, res, next) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video fetched successfully!"));
+    .json(new ApiResponse(200, video[0], "Video fetched successfully!"));
 };
 
 //CONTROLLER 3:Update video by patch in "api/v1/videos/v/:videoId"
@@ -318,13 +320,19 @@ const getAllVideos = async (req, res) => {
         owner: foundUser._id,
       },
     });
-    if (foundUser._id.toString() != req?.user?._id.toString()) {
+    if (!req.user || foundUser._id.toString() != req?.user?._id.toString()) {
       pipelines.push({
         $match: {
           isPublished: true,
         },
       });
     }
+  } else {
+    pipelines.push({
+      $match: {
+        isPublished: true,
+      },
+    });
   }
   pipelines.push([
     {
@@ -355,6 +363,7 @@ const getAllVideos = async (req, res) => {
         thumbnail: {
           url: 1,
         },
+        isPublished: 1,
       },
     },
   ]);
