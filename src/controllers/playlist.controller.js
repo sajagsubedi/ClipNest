@@ -258,7 +258,7 @@ export const getPlaylistInfo = async (req, res) => {
         name: 1,
         description: 1,
         "owner.username": "$ownerInfo.username",
-        "owner.fullName":"$ownerInfo.fullName",
+        "owner.fullName": "$ownerInfo.fullName",
         "owner.avatar.url": "$ownerInfo.avatar.url",
         "videos.title": 1,
         "videos.thumbnail.url": 1,
@@ -281,4 +281,44 @@ export const getPlaylistInfo = async (req, res) => {
     .json(
       new ApiResponse(200, playlistInfo[0], "playlist  fetched successfully!")
     );
+};
+
+//CONTROLLER 6: Get playlist information by patch in "api/v1/playlists/:playlistId"
+export const updatePlaylist = async (req, res) => {
+  const { name, description } = req.body;
+  const { playlistId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(playlistId)) {
+    throw new ApiError(400, "Invalid playlist Id");
+  }
+
+  if(!name && !description){
+    throw new ApiError(400,"Provide at least one field")
+  }
+
+  const existingPlaylist=await Playlist.findById(playlistId)
+
+  if(!existingPlaylist){
+    throw new ApiError(400, "Playlist not found!");
+  }
+  if(existingPlaylist.owner.toString() !== req.user._id.toString()){
+    throw new ApiError(403,"unauthorized Request!");
+  }
+  if(name){
+    existingPlaylist.name=name
+  }
+  if(description){
+    existingPlaylist.description=description
+  }
+  await existingPlaylist.save()
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(
+      200,
+      existingPlaylist,
+      "Playlist updated successfully!"
+    )
+  );
 };
