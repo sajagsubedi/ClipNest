@@ -7,12 +7,13 @@ import {
   getUserPlaylists,
   addVideo,
   addVideos,
+  getPlaylistInfo,
 } from "../controllers/playlist.controller.js";
 
 router.route("/").post(checkAuth, addPlaylist);
 router.route("/me").get(checkAuth, getMyPlaylists);
 router.route("/user/:userId").get(checkAuth, getUserPlaylists);
-router.route("/:playlistId/video").get(checkAuth, addVideo);
-router.route("/:playlistId/videos").get(checkAuth, addVideos);
+router.route("/:playlistId").post(checkAuth, addVideo).get(getPlaylistInfo);
 
+router.route("/:playlistId/videos").post(checkAuth, addVideos);
 export default router;
