@@ -9,6 +9,7 @@ import {
   addVideos,
   getPlaylistInfo,
   updatePlaylist,
+  deletePlaylist
 } from "../controllers/playlist.controller.js";
 
 router.route("/").post(checkAuth, addPlaylist);
@@ -18,7 +19,8 @@ router
   .route("/:playlistId")
   .post(checkAuth, addVideo)
   .get(getPlaylistInfo)
-  .patch(checkAuth, updatePlaylist);
+  .patch(checkAuth, updatePlaylist)
+  .delete(checkAuth,deletePlaylist)
 
 router.route("/:playlistId/videos").post(checkAuth, addVideos);
 export default router;

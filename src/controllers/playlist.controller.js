@@ -283,7 +283,7 @@ export const getPlaylistInfo = async (req, res) => {
     );
 };
 
-//CONTROLLER 6: Get playlist information by patch in "api/v1/playlists/:playlistId"
+//CONTROLLER 7: Update playlist information by patch in "api/v1/playlists/:playlistId"
 export const updatePlaylist = async (req, res) => {
   const { name, description } = req.body;
   const { playlistId } = req.params;
@@ -319,6 +319,39 @@ export const updatePlaylist = async (req, res) => {
       200,
       existingPlaylist,
       "Playlist updated successfully!"
+    )
+  );
+};
+
+//CONTROLLER 8: Delete playlist  by DELETE in "api/v1/playlists/:playlistId"
+export const deletePlaylist = async (req, res) => {
+  const { playlistId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(playlistId)) {
+    throw new ApiError(400, "Invalid playlist Id");
+  }
+
+  const existingPlaylist=await Playlist.findById(playlistId)
+
+  if(!existingPlaylist){
+    throw new ApiError(400, "Playlist not found!");
+  }
+  if(existingPlaylist.owner.toString() !== req.user._id.toString()){
+    throw new ApiError(403,"unauthorized Request!");
+  }
+ 
+  const deletedPlaylist=await Playlist.findByIdAndDelete(existingPlaylist._id)
+  if(!deletedPlaylist){
+    throw new ApiError(400, "Playlist not found!");
+  }
+
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(
+      200,
+      deletedPlaylist,
+      "Playlist deleted successfully!"
     )
   );
 };
