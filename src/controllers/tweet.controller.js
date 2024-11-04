@@ -85,8 +85,29 @@ export const getUserTweets = async (req, res) => {
     },
   ]);
 
-  
   return res
     .status(200)
     .json(new ApiResponse(201, userTweets, "Tweets fetched successfully!"));
+};
+
+//CONTROLLER 3:UPDATE TWEET BY PATCH IN "api/v1/tweets/:tweetId"
+export const updateTweet = async (req, res) => {
+  const { tweetId } = req.params;
+  const { content } = req.body;
+
+  if (!content) throw new ApiError(400, "Content is required");
+
+  const existingTweet = await Tweet.findById(tweetId);
+
+  if (!existingTweet) throw new ApiError(400, "Tweet not found!");
+
+  if (existingTweet.owner.toString() != req.user._id.toString())
+    throw new ApiError(403, "Unauthorized request");
+
+  existingTweet.content=content;
+  existingTweet.save()
+
+  return res
+  .status(201)
+  .json(new ApiResponse(201, existingTweet, "Tweet updated successfully!"));
 };
