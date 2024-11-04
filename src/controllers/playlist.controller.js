@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Playlist from "../models/playlist.model.js";
 import Video from "../models/video.model.js";
+import User from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -51,14 +52,18 @@ export const getMyPlaylists = async (req, res) => {
     .json(new ApiResponse(200, myPlaylists, "Playlist fetched successfully!"));
 };
 
-//CONTROLLER 3:Get users playlists by get in "api/v1/playlists/user/:userId"
+//CONTROLLER 3:Get users playlists by get in "api/v1/playlists/user/:username"
 export const getUserPlaylists = async (req, res) => {
-  const { userId } = req.params;
+  const { username } = req.params;
+
+  const user = await User.findOne({ username });
+
+  if (!user) throw new ApiError(400, "User with given username not found!");
 
   const myPlaylists = await Playlist.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId(userId),
+        owner: user?._id,
       },
     },
     {
@@ -292,35 +297,31 @@ export const updatePlaylist = async (req, res) => {
     throw new ApiError(400, "Invalid playlist Id");
   }
 
-  if(!name && !description){
-    throw new ApiError(400,"Provide at least one field")
+  if (!name && !description) {
+    throw new ApiError(400, "Provide at least one field");
   }
 
-  const existingPlaylist=await Playlist.findById(playlistId)
+  const existingPlaylist = await Playlist.findById(playlistId);
 
-  if(!existingPlaylist){
+  if (!existingPlaylist) {
     throw new ApiError(400, "Playlist not found!");
   }
-  if(existingPlaylist.owner.toString() !== req.user._id.toString()){
-    throw new ApiError(403,"unauthorized Request!");
+  if (existingPlaylist.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "unauthorized Request!");
   }
-  if(name){
-    existingPlaylist.name=name
+  if (name) {
+    existingPlaylist.name = name;
   }
-  if(description){
-    existingPlaylist.description=description
+  if (description) {
+    existingPlaylist.description = description;
   }
-  await existingPlaylist.save()
+  await existingPlaylist.save();
 
   return res
-  .status(200)
-  .json(
-    new ApiResponse(
-      200,
-      existingPlaylist,
-      "Playlist updated successfully!"
-    )
-  );
+    .status(200)
+    .json(
+      new ApiResponse(200, existingPlaylist, "Playlist updated successfully!")
+    );
 };
 
 //CONTROLLER 8: Delete playlist  by DELETE in "api/v1/playlists/:playlistId"
@@ -331,27 +332,25 @@ export const deletePlaylist = async (req, res) => {
     throw new ApiError(400, "Invalid playlist Id");
   }
 
-  const existingPlaylist=await Playlist.findById(playlistId)
+  const existingPlaylist = await Playlist.findById(playlistId);
 
-  if(!existingPlaylist){
+  if (!existingPlaylist) {
     throw new ApiError(400, "Playlist not found!");
   }
-  if(existingPlaylist.owner.toString() !== req.user._id.toString()){
-    throw new ApiError(403,"unauthorized Request!");
+  if (existingPlaylist.owner.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "unauthorized Request!");
   }
- 
-  const deletedPlaylist=await Playlist.findByIdAndDelete(existingPlaylist._id)
-  if(!deletedPlaylist){
+
+  const deletedPlaylist = await Playlist.findByIdAndDelete(
+    existingPlaylist._id
+  );
+  if (!deletedPlaylist) {
     throw new ApiError(400, "Playlist not found!");
   }
 
   return res
-  .status(200)
-  .json(
-    new ApiResponse(
-      200,
-      deletedPlaylist,
-      "Playlist deleted successfully!"
-    )
-  );
+    .status(200)
+    .json(
+      new ApiResponse(200, deletedPlaylist, "Playlist deleted successfully!")
+    );
 };

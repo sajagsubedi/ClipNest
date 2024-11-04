@@ -12,7 +12,7 @@ import {
 } from "../controllers/tweet.controller.js";
 
 router.route("/").post(checkAuth, createTweet);
-router.route("/user/:userId").get(checkOptionalAuth, getUserTweets);
+router.route("/user/:username").get(checkOptionalAuth, getUserTweets);
 router
   .route("/:tweetId")
   .patch(checkAuth, updateTweet)

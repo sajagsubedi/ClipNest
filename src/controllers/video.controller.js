@@ -251,7 +251,7 @@ const deleteVideo = async (req, res) => {
     .json(new ApiResponse(201, deletedVideo, "Video deleted successfully!"));
 };
 
-//CONTROLLER 5:get all videos by get in "api/v1/videos/getallvideos?sortBy=(date,viewCount)&uploadDate=(in seconds)&duration=(in seconds)&searchQuery=value&page=1,pageSize=2"
+//CONTROLLER 5:get all videos by get in "api/v1/videos/getallvideos?sortBy=(date,viewCount)&uploadDate=(in seconds)&duration=(in seconds)&searchQuery=value&page=1,pageSize=2&username=sajag"
 const getAllVideos = async (req, res) => {
   const {
     sortBy,

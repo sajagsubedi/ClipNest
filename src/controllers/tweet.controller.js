@@ -1,8 +1,8 @@
-import mongoose from "mongoose";
 import Tweet from "../models/tweet.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Like from "../models/like.model.js";
+import User from "../models/user.model.js";
 
 //-----------CONTROLLERS--------------
 
@@ -25,14 +25,18 @@ export const createTweet = async (req, res) => {
     .json(new ApiResponse(201, newTweet, "Tweet created successfully!"));
 };
 
-//CONTROLLER 2: TO GET USERS TWEET BY GET IN "/api/v1/tweets/users/:userId"
+//CONTROLLER 2: TO GET USERS TWEET BY GET IN "/api/v1/tweets/users/:username"
 export const getUserTweets = async (req, res) => {
-  const { userId } = req.params;
+  const { username } = req.params;
+  
+  const user=await User.findOne({username})
+
+  if(!user) throw new ApiError(400,"User with given username not found!")
 
   const userTweets = await Tweet.aggregate([
     {
       $match: {
-        owner: new mongoose.Types.ObjectId(userId),
+        owner: user?._id,
       },
     },
     {

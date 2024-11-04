@@ -14,7 +14,7 @@ import {
 
 router.route("/").post(checkAuth, addPlaylist);
 router.route("/me").get(checkAuth, getMyPlaylists);
-router.route("/user/:userId").get(checkAuth, getUserPlaylists);
+router.route("/user/:username").get(checkAuth, getUserPlaylists);
 router
   .route("/:playlistId")
   .post(checkAuth, addVideo)
