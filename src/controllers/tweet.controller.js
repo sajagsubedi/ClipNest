@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Tweet from "../models/tweet.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import Like from "../models/like.model.js";
 
 //-----------CONTROLLERS--------------
 
@@ -104,10 +105,29 @@ export const updateTweet = async (req, res) => {
   if (existingTweet.owner.toString() != req.user._id.toString())
     throw new ApiError(403, "Unauthorized request");
 
-  existingTweet.content=content;
-  existingTweet.save()
+  existingTweet.content = content;
+  existingTweet.save();
 
   return res
-  .status(201)
-  .json(new ApiResponse(201, existingTweet, "Tweet updated successfully!"));
+    .status(201)
+    .json(new ApiResponse(201, existingTweet, "Tweet updated successfully!"));
+};
+
+//CONTROLLER 4:DELETE TWEET BY DELETE IN "api/v1/tweets/:tweetId"
+export const deleteTweet = async (req, res) => {
+  const { tweetId } = req.params;
+
+  const deletedTweet = await Tweet.findOneAndDelete({
+    _id: tweetId,
+    owner: req?.user?._id,
+  });
+
+  if (!deletedTweet) throw new ApiError(400, "Tweet not found!");
+
+  //delete likes on tweet
+  await Like.deleteMany({ tweet: tweetId });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, deletedTweet, "Tweet deleted successfully!"));
 };
