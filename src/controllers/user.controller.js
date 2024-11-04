@@ -256,9 +256,13 @@ const updateAccount = async (req, res) => {
 
 //CONTROLLER 7:Get current user details by get in "api/v1/users/myprofile"
 const getMyProfile = async (req, res) => {
+  const userId=req?.user?._id;
+
+  const user=await User.findById(userId).select("-password -watchHistory -refreshToken")
+
   return res
     .status(200)
-    .json(new ApiResponse(200, req.user, "Your profile fetched successfully"));
+    .json(new ApiResponse(200, user, "Your profile fetched successfully"));
 };
 
 //CONTROLLER 8:Update avatar by patch in "api/v1/users/avatar"
