@@ -161,7 +161,7 @@ const getVideo = async (req, res, next) => {
   if (video.length == 0) {
     throw new ApiError(404, "Video not found");
   }
-  
+
   // Check if the video is unpublished and restrict access
   if (!video[0].isPublished) {
     if (!req.user || req.user._id != video[0].owner.toString()) {
@@ -176,6 +176,12 @@ const getVideo = async (req, res, next) => {
     { new: true }
   );
 
+  //adding video to users watch history
+  if (req.user?._id) {
+    const user = await User.findById(req?.user?._id);
+    user.watchHistory.push(video[0]._id);
+    await user.save()
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, video[0], "Video fetched successfully!"));
