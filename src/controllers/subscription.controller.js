@@ -22,6 +22,8 @@ const getMySubscribtions = async (req, res) => {
             pipeline:[{
               $project:{
                 fullName:1,
+                username:1,
+                email:1,
                 avatar:{
                   url:1
                 }
