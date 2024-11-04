@@ -2,6 +2,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import Comment from "../models/comment.model.js";
 import Video from "../models/video.model.js";
+import Like from "../models/like.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 
 //-----------CONTROLLERS--------------
@@ -145,6 +146,9 @@ export const deleteComment = async (req, res) => {
     throw new ApiError(400, "Comment doesn't exists or unauthorized request !");
   }
 
+  //delete likes associated with comment
+  await Like.deleteMany({ comment: commentId });
+  
   return res
     .status(201)
     .json(

@@ -1,5 +1,7 @@
 import Video from "../models/video.model.js";
 import User from "../models/user.model.js";
+import Comment from "../models/comment.model.js";
+import Like from "../models/like.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
@@ -180,7 +182,7 @@ const getVideo = async (req, res, next) => {
   if (req.user?._id) {
     const user = await User.findById(req?.user?._id);
     user.watchHistory.push(video[0]._id);
-    await user.save()
+    await user.save();
   }
   return res
     .status(200)
@@ -229,6 +231,20 @@ const deleteVideo = async (req, res) => {
   }
   await deleteFromCloudinary(deletedVideo.videoUrl.public_id);
   await deleteFromCloudinary(deletedVideo.thumbnail.public_id);
+
+  const toDeleteComments = await Comment.find({ video: deletedVideo._id }); //for deleting likes associated with them
+  const toDeleteCommentsId = toDeleteComments.map((comment) => comment._id); //creating array with only id of the comments
+
+  //delete comment associated with video
+  const deletedComments = await Comment.deleteMany({ video: deletedVideo._id });
+
+  //deleting likes associated with comments associated with video
+  const deletedCommentLikes = await Like.deleteMany({
+    comment: { $in: toDeleteCommentsId },
+  });
+
+  //deleting likes associated with videos
+  const deletedLikes = await Like.deleteMany({ video: deletedVideo._id });
 
   return res
     .status(200)
