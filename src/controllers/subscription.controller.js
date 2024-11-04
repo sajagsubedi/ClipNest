@@ -43,7 +43,7 @@ const getMySubscribtions = async (req, res) => {
 };
 
 //CONTROLLER 2:Toggle subscribed channel by posr in "api/v1/subscription/c/:channelId"
-const toggleSubcription = async (req, res) => {
+const toggleSubscription = async (req, res) => {
     const { channelId } = req.params;
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "Invalid Channel!");
@@ -79,4 +79,4 @@ const toggleSubcription = async (req, res) => {
         );
 };
 
-export { getMySubscribtions, toggleSubcription };
+export { getMySubscribtions, toggleSubscription };
