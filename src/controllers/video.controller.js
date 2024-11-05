@@ -356,7 +356,7 @@ const getAllVideos = async (req, res) => {
       },
     });
   }
-  pipelines.push([
+  pipelines.push(
     {
       $lookup: {
         from: "users",
@@ -387,8 +387,8 @@ const getAllVideos = async (req, res) => {
         },
         isPublished: 1,
       },
-    },
-  ]);
+    }
+  );
   const videoAggregate = Video.aggregate(pipelines);
 
   const options = {
